@@ -1,0 +1,5 @@
+---
+import { imageUrl, type Content } from '../lib/content';
+const { item } = Astro.props as { item: Content };
+---
+<a class="treatment" href={`/tratamientos/${item.slug}`}><div class="treatment-art">{item.image_id ? <img src={imageUrl(item.image_id, 640)} alt={item.title} loading="lazy" width="640" height="480"/> : <span aria-hidden="true">{item.title.slice(0, 1)}</span>}</div><span class="eyebrow">{item.category}</span><h3>{item.title} <span aria-hidden="true">↗</span></h3><p>{item.summary}</p></a>

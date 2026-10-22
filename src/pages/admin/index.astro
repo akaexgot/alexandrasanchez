@@ -1,0 +1,5 @@
+---
+import Layout from '../../layouts/AdminLayout.astro';
+import { sections } from '../../lib/content';
+---
+<Layout title="Bienvenida"><h1>Bienvenida, Alexandra</h1><p class="muted">Este es tu espacio. ¿Qué te gustaría actualizar hoy?</p><div class="admin-grid" style="margin-top:2.5rem">{Object.entries(sections).map(([key, section], index) => <a class="admin-card" href={`/admin/${key}`}><span class="eyebrow">0{index + 1} ↗</span><h2>{section.title}</h2><p class="muted">{section.description}</p></a>)}</div></Layout>

@@ -1,0 +1,6 @@
+---
+import '../styles/global.css';
+import { sections } from '../lib/content';
+const { title } = Astro.props;
+---
+<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/><meta name="robots" content="noindex,nofollow"/><title>{title} · Panel de Alexandra</title><link rel="icon" href="/favicon.svg"/></head><body><a class="skip" href="#contenido">Saltar al contenido</a><div class="admin-shell"><aside class="admin-nav"><a class="brand" href="/admin">Alexandra Sánchez<small>Tu espacio de gestión</small></a><nav aria-label="Administración"><a href="/admin" aria-current={Astro.url.pathname === '/admin' ? 'page' : undefined}>⌂ Inicio del panel</a>{Object.entries(sections).map(([key, value]) => <a href={`/admin/${key}`} aria-current={Astro.url.pathname.startsWith(`/admin/${key}`) ? 'page' : undefined}>{value.title}</a>)}</nav><p><a href="/" target="_blank" rel="noopener">Ver mi web ↗</a></p><form method="post" action="/api/auth/logout"><button class="button secondary" style="color:white;border-color:#bdb2a2">Cerrar sesión</button></form></aside><main class="admin-main" id="contenido"><span class="eyebrow">Panel privado</span><slot/></main></div></body></html>

@@ -1,0 +1,14 @@
+---
+import { imageUrl, type Content } from '../lib/content';
+const { items } = Astro.props as { items: Content[] };
+---
+<div class="grid">{items.map(item => <figure class="gallery-card"><div class="compare"><img src={imageUrl(item.after_id, 960)} alt={`Después: ${item.title}`} loading="lazy" width="768" height="960"/><img class="before" src={imageUrl(item.before_id, 960)} alt={`Antes: ${item.title}`} loading="lazy" width="768" height="960"/><div class="compare-labels"><span>Antes</span><span>Después</span></div><input type="range" min="0" max="100" value="50" aria-label={`Comparar antes y después: ${item.title}`}/></div><figcaption><strong>{item.title}</strong><p>{item.description}</p><button class="button secondary" data-enlarge={imageUrl(item.after_id, 1600)} data-caption={item.title}>Ampliar resultado</button></figcaption></figure>)}</div><dialog id="gallery-dialog"><button class="button secondary" data-close>Cerrar ×</button><img alt=""/></dialog>
+<script>
+function wireGallery() {
+  document.querySelectorAll<HTMLInputElement>('.compare input').forEach(input => { input.oninput = () => (input.parentElement as HTMLElement).style.setProperty('--position', `${input.value}%`); });
+  const dialog = document.querySelector<HTMLDialogElement>('#gallery-dialog');
+  document.querySelectorAll<HTMLButtonElement>('[data-enlarge]').forEach(button => { button.onclick = () => { if (!dialog) return; const image = dialog.querySelector('img')!; image.src = button.dataset.enlarge!; image.alt = button.dataset.caption!; dialog.showModal(); }; });
+  dialog?.querySelector<HTMLButtonElement>('[data-close]')?.addEventListener('click', () => dialog.close());
+}
+wireGallery(); document.addEventListener('gallery:updated', wireGallery);
+</script>

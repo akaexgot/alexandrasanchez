@@ -1,0 +1,5 @@
+---
+import type { Content } from '../lib/content';
+const { items } = Astro.props as { items: Content[] };
+---
+<div class="faq">{items.map(item => <details><summary>{item.title}</summary><p>{item.answer}</p></details>)}</div>

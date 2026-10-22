@@ -1,0 +1,5 @@
+---
+import AuthPage from '../../components/AuthPage.astro';
+if (!Astro.locals.user) return Astro.redirect('/admin/recuperar');
+---
+<AuthPage mode="restablecer"/>

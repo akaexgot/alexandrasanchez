@@ -1,0 +1,14 @@
+---
+const { posts = '' } = Astro.props as { posts?: string };
+const urls = posts.split('\n').map(v => v.trim()).filter(v => /^https:\/\/www\.instagram\.com\/(p|reel)\/[\w-]+\/?$/.test(v));
+---
+{urls.map(url => <div class="instagram-embed" data-post={url}><p>Este contenido se carga desde Instagram al pulsar el botón. Instagram podrá recibir tu dirección IP y utilizar sus propias cookies.</p><button class="button secondary" data-instagram-load>Permitir y ver esta publicación</button></div>)}
+<script>
+document.querySelectorAll<HTMLElement>('[data-post]').forEach(container => {
+  container.querySelector('button')?.addEventListener('click', () => {
+    const iframe = document.createElement('iframe'); iframe.src = `${container.dataset.post!.replace(/\/$/, '')}/embed/`; iframe.title = 'Publicación de Instagram'; iframe.loading = 'lazy'; iframe.referrerPolicy = 'no-referrer';
+    const revoke = document.createElement('button'); revoke.className = 'button secondary'; revoke.textContent = 'Retirar permiso y cerrar'; revoke.onclick = () => { iframe.remove(); revoke.remove(); container.querySelector('button')!.hidden = false; };
+    container.querySelector('button')!.hidden = true; container.append(iframe, revoke);
+  });
+});
+</script>

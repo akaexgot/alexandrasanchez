@@ -1,0 +1,53 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { PGlite } from '@electric-sql/pglite';
+test('migration enforces publication, roles, consent and private storage under PostgreSQL RLS', async () => {
+  const db = new PGlite();
+  try {
+    // Supabase-managed schemas are emulated; the application migration is unchanged.
+    await db.exec(`create role anon; create role authenticated;
+      create schema auth; create table auth.users(id uuid primary key);
+      create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true),'')::uuid $$;
+      grant usage on schema auth to anon, authenticated; grant execute on function auth.uid() to anon, authenticated;
+      create schema storage;
+      create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+      create table storage.objects(id uuid default gen_random_uuid(),bucket_id text,name text);
+      alter table storage.objects enable row level security;
+      grant usage on schema storage to anon, authenticated;
+      grant select,insert,update,delete on storage.objects to anon,authenticated;
+      grant usage on schema public to anon,authenticated;`);
+    await db.exec(await readFile(new URL('../supabase/migrations/202610220001_initial.sql', import.meta.url), 'utf8'));
+    await db.exec(await readFile(new URL('../supabase/migrations/202610220002_treatment_images.sql', import.meta.url), 'utf8'));
+    await db.exec(await readFile(new URL('../supabase/seed.sql', import.meta.url), 'utf8'));
+    const editor = '11111111-1111-4111-8111-111111111111';
+    const outsider = '22222222-2222-4222-8222-222222222222';
+    const asset = '33333333-3333-4333-8333-333333333333';
+    await db.exec(`insert into auth.users values ('${editor}'),('${outsider}'); insert into public.user_roles values ('${editor}','editor');
+      insert into public.media_assets(id,path) values('${asset}','${asset}.webp');
+      insert into storage.objects(bucket_id,name) values('media','${asset}.webp');
+      insert into public.treatments(title,slug,category,status,image_id) values('Draft secret','draft-secret','Micropigmentación','draft','${asset}');`);
+    await db.exec('set role anon');
+    assert.equal((await db.query('select * from public.treatments')).rows.length, 8);
+    assert.equal((await db.query('select * from public.media_assets')).rows.length, 0);
+    assert.equal((await db.query('select * from storage.objects')).rows.length, 0);
+    await assert.rejects(() => db.exec("insert into public.faqs(title,answer) values('Attack','Attack')"));
+    await db.exec(`reset role; set role authenticated; select set_config('request.jwt.claim.sub','${outsider}',false)`);
+    await assert.rejects(() => db.exec("insert into public.faqs(title,answer) values('Attack','Attack')"));
+    await assert.rejects(() => db.exec(`insert into public.user_roles values('${outsider}','admin')`));
+    await db.exec(`select set_config('request.jwt.claim.sub','${editor}',false)`);
+    assert.equal((await db.query('select * from public.treatments')).rows.length, 9);
+    await db.exec("insert into public.faqs(title,answer,status) values('Editor question','Answer','published')");
+    await assert.rejects(() => db.exec(`update public.user_roles set role='admin' where user_id='${editor}'`));
+    await assert.rejects(() => db.exec(`insert into public.gallery_results(title,treatment_id,status,before_id,after_id) select 'Invalid',id,'published','${asset}','${asset}' from public.treatments limit 1`));
+    await db.exec("update public.treatments set status='published' where slug='draft-secret'");
+    await db.exec("reset role; set role anon; select set_config('request.jwt.claim.sub','',false)");
+    assert.equal((await db.query('select * from public.media_assets')).rows.length, 1);
+    assert.equal((await db.query('select * from storage.objects')).rows.length, 1);
+    await db.exec(`reset role; set role authenticated; select set_config('request.jwt.claim.sub','${editor}',false); update public.treatments set status='draft' where slug='draft-secret'`);
+    await assert.rejects(() => db.exec(`delete from public.media_assets where id='${asset}'`));
+    await db.exec("reset role; set role anon; select set_config('request.jwt.claim.sub','',false)");
+    assert.equal((await db.query('select * from storage.objects')).rows.length, 0);
+    assert.equal((await db.query('select * from public.media_assets')).rows.length, 0);
+  } finally { await db.close(); }
+});

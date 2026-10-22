@@ -1,0 +1,17 @@
+---
+import '../styles/global.css';
+import { content, business } from '../lib/content';
+interface Props { title?: string; description?: string; noindex?: boolean; }
+const { title = 'Micropigmentación y estética de la mirada', description = 'Descubre los tratamientos de micropigmentación y estética de la mirada de Alexandra Sánchez. Contacto y atención personalizada por WhatsApp.', noindex = false } = Astro.props;
+const settings = (await content('negocio'))[0] || business;
+const site = process.env.PUBLIC_SITE_URL || import.meta.env.PUBLIC_SITE_URL;
+const canonical = site ? new URL(Astro.url.pathname, site).href : undefined;
+const links = [['Tratamientos', '/tratamientos'], ['Sobre mí', '/sobre-mi'], ['Resultados', '/resultados'], ['Contacto', '/contacto']];
+const wa = `https://wa.me/${settings.whatsapp || business.whatsapp}`;
+---
+<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/><title>{title} · Alexandra Sánchez</title><meta name="description" content={description}/><meta name="robots" content={noindex || !site ? 'noindex, nofollow' : 'index, follow'}/>{canonical && <link rel="canonical" href={canonical}/>}<meta property="og:title" content={`${title} · Alexandra Sánchez`}/><meta property="og:description" content={description}/><meta property="og:type" content="website"/><meta property="og:locale" content="es_ES"/>{canonical && <meta property="og:url" content={canonical}/>}<meta name="twitter:card" content="summary"/><link rel="icon" href="/favicon.svg" type="image/svg+xml"/>{site && <script type="application/ld+json" set:html={JSON.stringify({ '@context': 'https://schema.org', '@type': 'BeautySalon', name: settings.title, url: site, telephone: settings.phone, ...(settings.address ? { address: settings.address } : {}), sameAs: [settings.instagram, settings.facebook].filter(Boolean) }).replace(/</g, '\u003c')}/>}</head><body>
+<a class="skip" href="#contenido">Saltar al contenido</a><header class="site-header wrap"><a class="brand" href="/">Alexandra Sánchez<small>Micropigmentación & mirada</small></a><nav class="desktop-nav" aria-label="Principal">{links.map(([label, href]) => <a href={href} aria-current={Astro.url.pathname === href ? 'page' : undefined}>{label}</a>)}<a class="button secondary" href={wa}>Hablemos ↗</a></nav><details class="mobile-menu"><summary>Menú</summary><nav aria-label="Navegación móvil">{links.map(([label, href]) => <a href={href}>{label}</a>)}</nav></details></header>
+<main id="contenido"><slot/></main>
+<section class="cta"><span class="eyebrow">Un primer paso, una conversación</span><h2>Tu mirada empieza contigo.</h2><p>Cuéntame qué buscas. Resolvemos tus dudas juntas.</p><a class="button" href={wa}>Hablemos por WhatsApp <span aria-hidden="true">↗</span></a></section>
+<footer class="site-footer wrap"><div class="footer-top"><a class="brand" href="/">Alexandra Sánchez<small>La belleza de ser tú</small></a><div class="footer-links"><a href="/tratamientos">Tratamientos</a><a href="/opiniones">Opiniones</a><a href="/preguntas-frecuentes">Preguntas frecuentes</a><a href={settings.instagram}>Instagram ↗</a></div></div><div class="footer-bottom"><span>© {new Date().getFullYear()} Alexandra Sánchez</span><div class="footer-links"><a href="/aviso-legal">Aviso legal</a><a href="/politica-de-privacidad">Privacidad</a><a href="/politica-de-cookies">Cookies</a><a href="/admin">Acceso privado</a></div></div></footer><a class="floating-wa" href={wa} aria-label="Contactar con Alexandra por WhatsApp">WhatsApp ↗</a>
+</body></html>

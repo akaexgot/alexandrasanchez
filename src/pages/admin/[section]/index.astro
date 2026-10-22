@@ -1,0 +1,13 @@
+---
+import Layout from '../../../layouts/AdminLayout.astro';
+import { sections, type Section, type Content } from '../../../lib/content';
+const section = Astro.params.section as Section;
+if (!Object.hasOwn(sections, section)) return Astro.rewrite('/404');
+const config = sections[section];
+const page = Math.max(1, Number(Astro.url.searchParams.get('pagina')) || 1);
+const { data, error } = await Astro.locals.supabase!.from(config.table).select('*').order('sort_order').order('id').range((page - 1) * 24, page * 24 - 1);
+if (error) throw new Error('CONTENT_UNAVAILABLE');
+const items = data as Content[];
+if (['inicio', 'negocio'].includes(section) && items[0]) return Astro.redirect(`/admin/${section}/${items[0].id}`);
+---
+<Layout title={config.title}><div class="section-head"><div><h1>{config.title}</h1><p class="muted">{config.description}</p></div><a class="button" href={`/admin/${section}/nuevo`}>Añadir {section === 'resultados' ? 'resultado' : 'contenido'} +</a></div>{!items.length && <p class="empty">Todavía no hay contenido. Añade el primero cuando lo tengas preparado.</p>}{items.map(item => <article class="admin-row"><div><h2 style="font-size:1.5rem;margin-bottom:.5rem">{item.title}</h2><span class="badge">{item.status === 'published' ? 'Publicado' : 'Borrador'}</span></div><a class="button secondary" href={`/admin/${section}/${item.id}`}>Editar ↗</a></article>)}<nav class="pagination">{page > 1 && <a href={`?pagina=${page - 1}`}>Anterior</a>}{items.length === 24 && <a href={`?pagina=${page + 1}`}>Siguiente</a>}</nav></Layout>

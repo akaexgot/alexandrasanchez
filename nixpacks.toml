@@ -1,0 +1,13 @@
+[variables]
+NIXPACKS_NODE_VERSION = "24"
+HOST = "0.0.0.0"
+PORT = "4321"
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run check", "npm run build"]
+
+[start]
+cmd = "npm run start"
